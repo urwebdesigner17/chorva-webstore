@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+	.container{
+		min-width: 900px;
+	}
+    form {
+      background: white;
+      padding: 20px 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 320px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    table {
+      border-collapse: collapse;
+      width: 90%;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin: 30px auto 0;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background: #007bff;
+      color: white;
+    }
+    /* Success banner */
+    #successBanner {
+      display: none;
+      background: #28a745;
+      color: white;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: bold;
+      width: 320px;
+    }
+	.theFilter{
+		display: flex;
+		width: 75%;
+		margin: 1.5rem auto;
+		background-color: #9dc1ed;
+		padding: 1rem;
+		border-radius: 10px;
+	}
+	.totalAmt p{
+		width: 70%;
+		margin: auto;
+		text-align: center;
+		font-size: 1.5rem;
+		background: #2661cb14;
+		padding: 1.5rem;
+		border-radius: 10px;
+	}
+	.totalAmt span{
+		color: green;
+		font-weight: 700;
+	}
+  </style>
+</head>
+<body>
+<div class="container">
+	<div class="theFilter">
+		<!-- Filter input -->
+		<input 
+		  type="text" 
+		  id="filterInput" 
+		  placeholder="Search by Name or Item..." 
+		  style="margin-bottom:10px; padding:5px; width: 70%;"
+		>
+		<!-- Dropdown filter for Paid -->
+		<select id="paidFilter" style="margin-bottom:10px; padding:5px; width:30%">
+		  <option value="">Filter All</option>
+		  <option value="Yes">Yes</option>
+		  <option value="No">No</option>
+		</select>
+	</div>
+	<div class="totalAmt">
+		<p><strong>Total Amount: </strong><span id="totalAmount">0</span></p>
+	</div>
+	<!-- Table -->
+		<div class="theTable">
+		<table border="1" id="dataTable">
+		  <thead>
+			<tr>
+			  <th>Date</th>
+			  <th>Name</th>
+			  <th>Item</th>
+			  <th>Amount</th>
+			  <th>Paid</th>
+			</tr>
+		  </thead>
+		  <tbody></tbody>
+		</table>
+	</div>
+</div>
+
+  <script>
+    const tableBody = document.querySelector("#dataTable tbody");
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzH9H2awqRqwNR5VBbiOKkSHZbBw1eKZcgOy5NdQ2MeWBqWf1W66o2uel5_STPlHp7g/exec"; // <-- replace with /exec link
+
+    // ✅ Load existing data on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      fetch(WEB_APP_URL)
+        .then(response => response.json())
+        .then(data => {
+          tableBody.innerHTML = ""; // clear
+          data.forEach(row => {
+            const newRow = tableBody.insertRow();
+            newRow.innerHTML = `
+              <td>${row.date}</td>
+              <td>${row.name}</td>
+              <td>${row.item}</td>
+              <td>${row.amount}</td>
+              <td>${row.paid}</td>
+            `;
+          });
+        })
+        .catch(err => console.error("Error loading data:", err));
+    });
+	
+	//Special functions
+	function updateTotals() {
+		let rows = document.querySelectorAll("#dataTable tbody tr");
+		let total = 0;
+
+		rows.forEach(row => {
+		  if (row.style.display !== "none") { // only count visible rows
+			let amount = parseFloat(row.cells[3].innerText) || 0; // 4th column = Amount
+			total += amount;
+		  }
+		});
+
+		document.getElementById("totalAmount").innerText = total.toFixed(2);
+	  }
+
+	  // General search filter
+	  document.getElementById("filterInput").addEventListener("keyup", function () {
+		let filter = this.value.toLowerCase();
+		let rows = document.querySelectorAll("#dataTable tbody tr");
+
+		rows.forEach(row => {
+		  let text = row.innerText.toLowerCase();
+		  row.style.display = text.includes(filter) ? "" : "none";
+		});
+
+		updateTotals();
+	  });
+
+	  // Paid dropdown filter
+	  document.getElementById("paidFilter").addEventListener("change", function () {
+		let filter = this.value.toLowerCase();
+		let rows = document.querySelectorAll("#dataTable tbody tr");
+
+		rows.forEach(row => {
+		  let paidCell = row.cells[4].innerText.toLowerCase(); // 5th column = Paid
+		  if (filter === "" || paidCell === filter) {
+			row.style.display = "";
+		  } else {
+			row.style.display = "none";
+		  }
+		});
+
+		updateTotals();
+	  });
+  </script>
+
+</body>
+</html>
